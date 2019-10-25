@@ -106,6 +106,9 @@ public class ServerHandler {
                                 cam.setCurrentPipelineIndex(nextIndex);
                                 sendFullSettings();
                                 break;
+                            case "retryCameras":
+                                System.out.println("do stuff");
+                                break;
                         }
                         // used to define all incoming commands
                         break;

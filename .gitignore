@@ -111,3 +111,5 @@ Main/target
 New client/chameleon-client/node_modules/
 Main/dependency-reduced-pom.xml
 Main/src/main/java/META-INF
+
+chameleon-client/package-lock.json

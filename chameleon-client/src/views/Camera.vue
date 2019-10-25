@@ -79,7 +79,14 @@
                     <!-- camera image stream -->
                     <div class="videoClass">
                         <img v-if="cameraList.length > 0" :src="steamAdress">
-                        <span v-else>No Cameras Are connected</span>
+                        <div v-else>
+                            <v-row justify='center'>
+                                <span>No Cameras Are connected</span>
+                            </v-row>
+                            <v-row justify='center' style="padding-top:10px">
+                                <v-btn small color="#4baf62" @click="handleInput('command','retryCameras')">Retry cameras</v-btn>
+                            </v-row>
+                        </div>
                         <h5 id="Point">{{point}}</h5>
                     </div>
                 </div>
