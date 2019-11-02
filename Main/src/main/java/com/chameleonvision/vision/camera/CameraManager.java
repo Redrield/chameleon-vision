@@ -95,11 +95,9 @@ public class CameraManager {
 		return AllCamerasByName.get( (AllCamerasByName.keySet().toArray())[ index ] );
 	}
 
-	public static Camera getCurrentCamera() throws CameraException {
-		if (AllCamerasByName.size() == 0) throw new CameraException(CameraException.CameraExceptionType.NO_CAMERA);
-		var curCam = AllCamerasByName.get(SettingsManager.GeneralSettings.currentCamera);
-		if (curCam == null) throw new CameraException(CameraException.CameraExceptionType.BAD_CAMERA);
-		return curCam;
+	public static Camera getCurrentCamera() {
+		if (AllCamerasByName.size() == 0) return null;
+		return AllCamerasByName.get(SettingsManager.GeneralSettings.currentCamera);
 	}
 	public static Integer getCurrentCameraIndex() throws CameraException {
 		if (AllCamerasByName.size() == 0) throw new CameraException(CameraException.CameraExceptionType.NO_CAMERA);

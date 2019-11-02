@@ -9,30 +9,38 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class SettingsManager {
 	public static final Path SettingsPath = Paths.get(System.getProperty("user.dir"), "settings");
-	public static com.chameleonvision.settings.GeneralSettings GeneralSettings;
+	public static com.chameleonvision.settings.GeneralSettings GeneralSettings = new GeneralSettings();
 
 	private SettingsManager() {}
 
-	public static void initialize() {
-		initGeneralSettings();
+	public static void initCameraSettings() {
 		var allCameras = CameraManager.getAllCamerasByName();
-		if (!allCameras.containsKey(GeneralSettings.currentCamera) && allCameras.size() > 0) {
-			var cam = allCameras.entrySet().stream().findFirst().get().getValue();
-			GeneralSettings.currentCamera = cam.name;
-			GeneralSettings.currentPipeline = cam.getCurrentPipelineIndex();
+		if (allCameras != null) {
+			if (!allCameras.containsKey(GeneralSettings.currentCamera) && allCameras.size() > 0) {
+				var cam = allCameras.entrySet().stream().findFirst().get().getValue();
+				GeneralSettings.currentCamera = cam.name;
+				GeneralSettings.currentPipeline = cam.getCurrentPipelineIndex();
+			}
 		}
 	}
 
-	private static void initGeneralSettings() {
+	public static void initGeneralSettings() {
 		FileHelper.CheckPath(SettingsPath);
 		try {
+			var settingsFilePath = Paths.get(SettingsPath.toString(), "settings.json").toString();
+			var jsonFileReader = new FileReader(Paths.get(SettingsPath.toString(), "settings.json").toString());
+			var fileText = Files.readString(Paths.get(settingsFilePath));
+			var gson = new Gson();
+			var result = gson.fromJson(jsonFileReader, com.chameleonvision.settings.GeneralSettings.class);
 			GeneralSettings = new Gson().fromJson(new FileReader(Paths.get(SettingsPath.toString(), "settings.json").toString()), com.chameleonvision.settings.GeneralSettings.class);
-		} catch (FileNotFoundException e) {
+		} catch (Exception e) {
 			GeneralSettings = new GeneralSettings();
 		}
 	}

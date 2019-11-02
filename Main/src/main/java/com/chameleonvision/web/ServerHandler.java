@@ -1,24 +1,21 @@
 package com.chameleonvision.web;
 
+import com.chameleonvision.Main;
 import com.chameleonvision.settings.GeneralSettings;
 import com.chameleonvision.vision.*;
-import com.chameleonvision.vision.camera.Camera;
 import com.chameleonvision.vision.camera.CameraException;
 import com.chameleonvision.settings.SettingsManager;
 import com.chameleonvision.vision.camera.CameraManager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.wpi.cscore.VideoException;
 import io.javalin.websocket.*;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 import org.springframework.beans.BeanUtils;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -107,7 +104,7 @@ public class ServerHandler {
                                 sendFullSettings();
                                 break;
                             case "retryCameras":
-                                System.out.println("do stuff");
+                                Main.initCameras();
                                 break;
                         }
                         // used to define all incoming commands
@@ -208,45 +205,57 @@ public class ServerHandler {
 
     private static HashMap<String, Object> getOrdinalSettings() {
         HashMap<String, Object> tmp = new HashMap<>();
-        tmp.put("teamNumber", SettingsManager.GeneralSettings.teamNumber);
-        tmp.put("connectionType", SettingsManager.GeneralSettings.connectionType.ordinal());
-        tmp.put("ip", SettingsManager.GeneralSettings.ip);
-        tmp.put("gateway", SettingsManager.GeneralSettings.gateway);
-        tmp.put("netmask", SettingsManager.GeneralSettings.netmask);
-        tmp.put("hostname", SettingsManager.GeneralSettings.hostname);
+
+        GeneralSettings genSettings = new GeneralSettings();
+        if (SettingsManager.GeneralSettings != null) {
+            genSettings = SettingsManager.GeneralSettings;
+        }
+
+        tmp.put("teamNumber", genSettings.teamNumber);
+        tmp.put("connectionType", genSettings.connectionType.ordinal());
+        tmp.put("ip", genSettings.ip);
+        tmp.put("gateway", genSettings.gateway);
+        tmp.put("netmask", genSettings.netmask);
+        tmp.put("hostname", genSettings.hostname);
         return tmp;
     }
 
     private static HashMap<String, Object> getOrdinalCameraSettings() {
         HashMap<String, Object> tmp = new HashMap<>();
-        try {
-            var currentCamera = CameraManager.getCurrentCamera();
-            tmp.put("fov", currentCamera.getFOV());
-            tmp.put("streamDivisor", currentCamera.getStreamDivisor().ordinal());
-            tmp.put("resolution", currentCamera.getVideoModeIndex());
-        } catch (CameraException e) {
-            e.printStackTrace();
-        }
+        var currentCamera = CameraManager.getCurrentCamera();
+        if (currentCamera == null) return new HashMap<>();
+        tmp.put("fov", currentCamera.getFOV());
+        tmp.put("streamDivisor", currentCamera.getStreamDivisor().ordinal());
+        tmp.put("resolution", currentCamera.getVideoModeIndex());
+
         return tmp;
     }
 
     public static void sendFullSettings() {
         //General settings
         Map<String, Object> fullSettings = new HashMap<>();
-        try {
-            fullSettings.put("settings", getOrdinalSettings());
-            fullSettings.put("cameraSettings", getOrdinalCameraSettings());
-            fullSettings.put("cameraList", CameraManager.getAllCameraByNickname());
-            var currentCamera = CameraManager.getCurrentCamera();
-            fullSettings.put("pipeline", getOrdinalPipeline());
-            fullSettings.put("pipelineList", currentCamera.getPipelinesNickname());
-            fullSettings.put("resolutionList", currentCamera.getResolutionList());
-            fullSettings.put("port", currentCamera.getStreamPort());
-            fullSettings.put("currentPipelineIndex",CameraManager.getCurrentCamera().getCurrentPipelineIndex());
-            fullSettings.put("currentCameraIndex", CameraManager.getCurrentCameraIndex());
-        } catch (CameraException | IllegalAccessException e) {
-            System.err.println("No camera found!");
+        boolean hasCamera = CameraManager.getCurrentCamera() != null;
+
+        fullSettings.put("settings", getOrdinalSettings());
+
+        if (hasCamera) {
+            try {
+                fullSettings.put("cameraSettings", getOrdinalCameraSettings());
+                fullSettings.put("cameraList", CameraManager.getAllCameraByNickname());
+                var currentCamera = CameraManager.getCurrentCamera();
+                fullSettings.put("pipeline", getOrdinalPipeline());
+                fullSettings.put("pipelineList", currentCamera.getPipelinesNickname());
+                fullSettings.put("resolutionList", currentCamera.getResolutionList());
+                fullSettings.put("port", currentCamera.getStreamPort());
+                fullSettings.put("currentPipelineIndex",CameraManager.getCurrentCamera().getCurrentPipelineIndex());
+                fullSettings.put("currentCameraIndex", CameraManager.getCurrentCameraIndex());
+            } catch (CameraException | IllegalAccessException ignored) {
+                System.out.println("No cameras detected, notifying user via UI.");
+            }
+        } else {
+            fullSettings.put("cameraList", new ArrayList<String>());
         }
+
         broadcastMessage(fullSettings);
     }
 }

@@ -6,6 +6,7 @@ import com.chameleonvision.settings.SettingsManager;
 import com.chameleonvision.util.Utilities;
 import com.chameleonvision.vision.camera.CameraManager;
 import com.chameleonvision.web.Server;
+import com.chameleonvision.web.ServerHandler;
 import edu.wpi.cscore.CameraServerCvJNI;
 import edu.wpi.cscore.CameraServerJNI;
 import edu.wpi.first.networktables.LogMessage;
@@ -24,6 +25,7 @@ public class Main {
 
     private static final int DEFAULT_PORT = 8888;
 
+    private static int webServerPort = DEFAULT_PORT;
     private static boolean ntServerMode = false;
     private static boolean manageNetwork = true;
     private static boolean ignoreRoot = false;
@@ -54,7 +56,7 @@ public class Main {
                 case PORT_KEY:
                 case NT_CLIENTMODESERVER_KEY:
                     var potentialValue = args[i + 1];
-                    // ensures this "value" isnt null, blank, nor another argument
+                    // ensures this "value" isn't null, blank, nor another argument
                     if (potentialValue != null && !potentialValue.isBlank() && !potentialValue.startsWith("-") & !potentialValue.startsWith("--")) {
                         value = potentialValue.toLowerCase();
                     }
@@ -69,13 +71,12 @@ public class Main {
             // this switch actually handles the arguments.
             switch (key) {
                 case PORT_KEY:
-                    System.out.println("INFO - The \"--port\" argument is currently disabled.");
-//                    try {
-//                        if (value == null) throw new Exception("Bad or No argument value");
-//                        webserverPort = Integer.parseInt(value);
-//                    } catch (Exception ex) {
-//                        System.err.printf("Argument for port was invalid, starting server at port %d\n", DEFAULT_PORT);
-//                    }
+                    try {
+                        if (value == null) throw new Exception("Bad or No argument value");
+                        webServerPort = Integer.parseInt(value);
+                    } catch (Exception ex) {
+                        System.err.printf("Argument for port was invalid, using default port: %d\n", DEFAULT_PORT);
+                    }
                     break;
                 case NT_SERVERMODE_KEY:
                     ntServerMode = true;
@@ -132,28 +133,35 @@ public class Main {
             throw new RuntimeException("Failed to load JNI Libraries!");
         }
 
-        if (CameraManager.initializeCameras()) {
-            SettingsManager.initialize();
-            NetworkManager.initialize(manageNetwork);
-            CameraManager.initializeThreads();
+        NetworkManager.initialize(manageNetwork);
+        SettingsManager.initGeneralSettings();
 
-            if (ntServerMode) {
-                System.out.println("Starting NT Server");
-                NetworkTableInstance.getDefault().startServer();
-            } else {
-                NetworkTableInstance.getDefault().addLogger(new NTLogger(), 0, 255); // to hide error messages
-                if (ntClientModeServer != null) {
-                    NetworkTableInstance.getDefault().startClient(ntClientModeServer);
-                } else {
-                    NetworkTableInstance.getDefault().startClientTeam(SettingsManager.GeneralSettings.teamNumber);
-                }
-            }
+        System.out.printf("Starting WebServer at port %d\n", webServerPort);
+        Server.main(webServerPort);
 
-            int webserverPort = DEFAULT_PORT;
-            System.out.printf("Starting Webserver at port %d\n", webserverPort);
-            Server.main(webserverPort);
+        if (ntServerMode) {
+            System.out.println("Starting NT Server");
+            NetworkTableInstance.getDefault().startServer();
         } else {
-            System.err.println("No cameras connected!");
+            NetworkTableInstance.getDefault().addLogger(new NTLogger(), 0, 255); // to hide error messages
+            if (ntClientModeServer != null) {
+                NetworkTableInstance.getDefault().startClient(ntClientModeServer);
+            } else {
+                NetworkTableInstance.getDefault().startClientTeam(SettingsManager.GeneralSettings.teamNumber);
+            }
+        }
+
+        initCameras();
+    }
+
+    public static void initCameras() {
+        if (CameraManager.initializeCameras()) {
+            System.out.println("Initializing Cameras");
+            SettingsManager.initCameraSettings();
+            CameraManager.initializeThreads();
+        } else {
+            System.out.println("No cameras");
+            ServerHandler.sendFullSettings(); // notify UI of no cameras
         }
     }
 }
