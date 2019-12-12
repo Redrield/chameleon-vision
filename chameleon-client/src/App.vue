@@ -25,14 +25,19 @@
                 </v-layout>
             </v-container>
         </v-content>
+        <CVterminal ref="terminal" class="terminalClass"/>
     </v-app>
 </template>
 
 <script>
+    import CVterminal from './components/cv-terminal'
+
     export default {
         name: 'App',
 
-        components: {},
+        components: {
+            CVterminal
+        },
         methods: {
             handleMessage(key, value) {
                 if (this.$store.state.hasOwnProperty(key)) {
@@ -95,6 +100,15 @@
 <style>
     html {
         overflow-y: hidden !important;
+    }
+
+    .terminalClass {
+        position: absolute;
+        bottom: 0;
+        display: contents;
+        height: 20%;
+        width: auto;
+        min-height: 20px !important;
     }
 
     .imgClass {
