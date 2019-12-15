@@ -46,7 +46,12 @@
                     this.$store.commit('setPipeValues', {[key]: value});
                 } else {
                     switch (key) {
-
+                        case "console":{
+                           for (let i in value){
+                               this.$refs.terminal.writeLog(i, value[i]);
+                           }
+                            break;
+                        }
                         default: {
                             console.log(key + " : " + value);
                         }
@@ -106,7 +111,7 @@
         position: absolute;
         bottom: 0;
         display: contents;
-        height: 20%;
+        height: 150px;
         width: auto;
         min-height: 20px !important;
     }

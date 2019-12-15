@@ -4,8 +4,8 @@
 
 <script>
     import 'xterm/css/xterm.css'
-    import {Terminal} from 'xterm'
-
+    import { Terminal } from 'xterm'
+    import { FitAddon } from 'xterm-addon-fit'
     export default {
         name: "CVTerminal",
         data() {
@@ -33,12 +33,12 @@
         },
         mounted() {
             let term = new Terminal();
+            let fitAddon = new FitAddon();
+            term.loadAddon(fitAddon);
             term.open(this.$refs.console);
-            term.onResize(size =>{
-                if (size.cols !== this.cols) this.$emit('update:cols', size.cols)
-                if (size.rows !== this.rows) this.$emit('update:rows', size.rows)
-            });
+            term.onResize(()=> this.$fit());
             this.$terminal = term;
+            this.$fit = fitAddon;
         }
     }
 </script>
@@ -48,7 +48,9 @@
         width: inherit;
         height: inherit;
         overflow: hidden;
-        min-height: 20px;
+    }
+    .xterm-viewport {
+        overflow-y: hidden !important;
     }
 
 </style>
