@@ -4,6 +4,7 @@
             <img class="imgClass" src="./assets/logo.png">
             <v-toolbar-title id="title">Chameleon Vision</v-toolbar-title>
             <div class="flex-grow-1"></div>
+            <v-btn :ripple="false" :color="consoleButtonColor" depressed tile height="48" @click="toggleConsole">Console</v-btn>
             <v-toolbar-items>
                 <v-tabs dark height="48" slider-color="#4baf62">
                     <v-tab to="vision">Vision</v-tab>
@@ -25,7 +26,7 @@
                 </v-layout>
             </v-container>
         </v-content>
-        <CVterminal ref="terminal" class="terminalClass"/>
+        <CVterminal v-show="isConsole" ref="terminal" class="terminalClass"/>
     </v-app>
 </template>
 
@@ -39,6 +40,14 @@
             CVterminal
         },
         methods: {
+            toggleConsole(){
+                this.isConsole = !this.isConsole;
+                if (this.isConsole){
+                    this.consoleButtonColor = "#003b0e"
+                } else{
+                    this.consoleButtonColor = "#418643"
+                }
+            },
             handleMessage(key, value) {
                 if (this.$store.state.hasOwnProperty(key)) {
                     this.$store.commit(key, value);
@@ -71,7 +80,9 @@
             }
         },
         data: () => ({
-            timer: undefined
+            timer: undefined,
+            isConsole:false,
+            consoleButtonColor:"#418643"
         }),
         created() {
             this.$options.sockets.onmessage = (data) => {
